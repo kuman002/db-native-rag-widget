@@ -1,4 +1,6 @@
 import pg from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from './schema.js';
 import { env } from '../config/env.js';
 
 const { Pool } = pg;
@@ -17,6 +19,8 @@ export const pool = new Pool({
 pool.on('error', (err) => {
   console.error('Unexpected error on idle PostgreSQL client:', err);
 });
+
+export const db = drizzle(pool, { schema });
 
 export async function query<T extends pg.QueryResultRow = any>(
   text: string,
