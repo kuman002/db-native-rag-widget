@@ -12,6 +12,10 @@ export const envSchema = z.object({
   VECTOR_DIMENSION: z.coerce.number().int().positive().default(1536),
   REDIS_HOST: z.string().min(1, 'REDIS_HOST is required').default('localhost'),
   REDIS_PORT: z.coerce.number().int().positive('REDIS_PORT must be a positive integer').default(6380),
+  CDC_CHANNEL: z.string().min(1).default('rag_cdc_channel'),
+  CDC_QUEUE_NAME: z.string().min(1).default('cdc-mutations'),
+  CDC_DEBOUNCE_MS: z.coerce.number().int().nonnegative().default(500),
+  CDC_MAX_RETRIES: z.coerce.number().int().positive().default(5),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 

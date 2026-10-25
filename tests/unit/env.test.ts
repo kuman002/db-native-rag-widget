@@ -26,6 +26,35 @@ describe('Environment Configuration Validation (src/config/env.ts)', () => {
     expect(config.POSTGRES_DB).toBe('rag_widget_db');
     expect(config.VECTOR_DIMENSION).toBe(1536); // Default
     expect(config.REDIS_PORT).toBe(6380);
+    expect(config.CDC_CHANNEL).toBe('rag_cdc_channel');
+    expect(config.CDC_QUEUE_NAME).toBe('cdc-mutations');
+    expect(config.CDC_DEBOUNCE_MS).toBe(500);
+    expect(config.CDC_MAX_RETRIES).toBe(5);
+  });
+
+  it('allows overriding CDC configuration values', async () => {
+    const customEnv = {
+      POSTGRES_HOST: 'localhost',
+      POSTGRES_PORT: '5432',
+      POSTGRES_DB: 'rag_widget_db',
+      POSTGRES_USER: 'rag_user',
+      POSTGRES_PASSWORD: 'rag_secure_password',
+      REDIS_HOST: 'localhost',
+      REDIS_PORT: '6380',
+      CDC_CHANNEL: 'custom_cdc_channel',
+      CDC_QUEUE_NAME: 'custom-queue',
+      CDC_DEBOUNCE_MS: '1000',
+      CDC_MAX_RETRIES: '3',
+      NODE_ENV: 'test' as const,
+    };
+
+    const { loadConfig } = await import('../../src/config/env.js');
+    const config = loadConfig(customEnv);
+
+    expect(config.CDC_CHANNEL).toBe('custom_cdc_channel');
+    expect(config.CDC_QUEUE_NAME).toBe('custom-queue');
+    expect(config.CDC_DEBOUNCE_MS).toBe(1000);
+    expect(config.CDC_MAX_RETRIES).toBe(3);
   });
 
   it('throws a validation error when mandatory variables are missing', async () => {

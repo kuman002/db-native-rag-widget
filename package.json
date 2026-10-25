@@ -12,8 +12,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run tests/integration",
+    "cdc:listen": "tsx src/ingestion/listener.ts",
     "migrate": "tsx src/database/migrate.ts",
     "db:generate": "drizzle-kit generate",
+    "db:generate:custom": "drizzle-kit generate --custom",
     "db:migrate": "tsx src/database/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
@@ -24,6 +26,8 @@
     "docker:down": "docker compose down"
   },
   "dependencies": {
+    "@esbuild/linux-x64": "^0.28.2",
+    "bullmq": "^6.4.1",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.45.4",
     "ioredis": "^5.4.2",
