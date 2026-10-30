@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DB-Native RAG Widget - Interactive Playground</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand { font-size: 20px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    .badge { background: #dbeafe; color: #1e40af; font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+    .container { max-width: 1040px; margin: 40px auto; padding: 0 24px; }
+    .hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .hero h1 { font-size: 32px; font-weight: 800; margin-bottom: 12px; }
+    .hero p { color: var(--text-muted); font-size: 16px; max-width: 650px; margin: 0 auto 24px; }
+    .action-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .chip {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 24px;
+      font-size: 13.5px;
+      cursor: pointer;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+    .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card h3 { font-size: 18px; margin-bottom: 8px; }
+    .card p { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 14px; }
+    .price { font-size: 20px; font-weight: 700; color: #16a34a; }
+    .stock { font-size: 12px; background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 6px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span>⚡ TechStore Demo</span>
+      <span class="badge">Live RAG Connected</span>
+    </div>
+    <div>
+      <span style="font-size: 13px; color: var(--text-muted);">Database: PostgreSQL + pgvector (CDC Active)</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="hero">
+      <h1>Operational Storefront Demo</h1>
+      <p>This page embeds the DB-Native RAG chat widget via a single script tag with Shadow DOM isolation. Click a sample inquiry below or open the floating widget at the bottom right.</p>
+
+      <div class="action-chips">
+        <button class="chip" onclick="askWidget('Do you have ergonomic chairs in stock and how much do they cost?')">🪑 "Do you have ergonomic chairs?"</button>
+        <button class="chip" onclick="askWidget('What is your shipping policy and delivery timeframe?')">🚚 "What is your shipping policy?"</button>
+        <button class="chip" onclick="askWidget('What are the specs of the UltraLight Carbon Bike?')">🚲 "Tell me about the Carbon Bike"</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Verified Database Inventory</h2>
+    <div class="grid">
+      <div class="card">
+        <div>
+          <h3>Ergonomic Office Chair Pro</h3>
+          <p>High-density foam, lumbar adjustment, breathable mesh back, and 4D armrests. Backed by a 5-year warranty.</p>
+        </div>
+        <div class="card-footer">
+          <span class="price">$299.99</span>
+          <span class="stock">In Stock (42 units)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h3>Standing Desk Pro Adjustable</h3>
+          <p>Dual electric motors, programmable memory presets, height range 28" to 48". Solid bamboo desktop.</p>
+        </div>
+        <div class="card-footer">
+          <span class="price">$499.00</span>
+          <span class="stock">In Stock (18 units)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h3>UltraLight Carbon Road Bike</h3>
+          <p>Full Toray T800 carbon fiber frame, Shimano 105 Di2 electronic 12-speed groupset, hydraulic disc brakes. Weight: 7.2kg.</p>
+        </div>
+        <div class="card-footer">
+          <span class="price">$1,299.00</span>
+          <span class="stock">Low Stock (5 units)</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Embeddable DB-Native RAG Widget Script -->
+  <script 
+    src="/widget.js" 
+    data-tenant-key="tnt_demo_store"
+    data-primary-color="#2563eb"
+    data-title="TechStore Assistant"
+    data-greeting="Hi! I am connected live to TechStore's database. Ask me anything about stock, pricing, or specifications."
+    defer>
+  </script>
+
+  <script>
+    function askWidget(question) {
+      if (window.RagWidget) {
+        window.RagWidget.open();
+        // Give time for animation then trigger inquiry
+        setTimeout(() => {
+          const root = document.querySelector('#db-native-rag-widget-root');
+          if (root && root.shadowRoot) {
+            const textarea = root.shadowRoot.querySelector('.rag-textarea');
+            const sendBtn = root.shadowRoot.querySelector('.rag-send-btn');
+            if (textarea && sendBtn) {
+              textarea.value = question;
+              sendBtn.click();
+            }
+          }
+        }, 200);
+      }
+    }
+  </script>
+</body>
+</html>
+

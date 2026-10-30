@@ -3,6 +3,7 @@ import {
   MockLlmProvider,
   OllamaLlmProvider,
   OpenAiCompatibleLlmProvider,
+  GeminiLlmProvider,
   getLlmProvider,
 } from '../../src/query/llm.js';
 
@@ -25,6 +26,7 @@ describe('LLM Provider Abstraction (Task 1)', () => {
     expect(getLlmProvider('ollama')).toBeInstanceOf(OllamaLlmProvider);
     expect(getLlmProvider('groq')).toBeInstanceOf(OpenAiCompatibleLlmProvider);
     expect(getLlmProvider('openai')).toBeInstanceOf(OpenAiCompatibleLlmProvider);
+    expect(getLlmProvider('gemini')).toBeInstanceOf(GeminiLlmProvider);
     expect(() => getLlmProvider('unknown_provider')).toThrow(/Unsupported LLM provider/);
   });
 

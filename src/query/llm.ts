@@ -145,6 +145,108 @@ export class OpenAiCompatibleLlmProvider implements LlmProvider {
   }
 }
 
+export class GeminiLlmProvider implements LlmProvider {
+  constructor(
+    private readonly apiKey: string = env.GEMINI_API_KEY || '',
+    private readonly model: string = env.LLM_MODEL || 'gemini-1.5-flash'
+  ) {}
+
+  async generate(prompt: string, systemPrompt?: string): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured in .env');
+    }
+
+    const cleanModel = this.model.replace(/^models\//, '');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${this.apiKey}`;
+    console.log(`[Gemini LLM] Calling Google Gemini API (model: ${cleanModel})...`);
+
+    const body: Record<string, any> = {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    };
+
+    if (systemPrompt) {
+      body.system_instruction = { parts: [{ text: systemPrompt }] };
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Google Gemini API error (${res.status}): ${errText}`);
+    }
+
+    const data = (await res.json()) as any;
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
+
+  async *generateStream(prompt: string, systemPrompt?: string): AsyncIterable<string> {
+    if (!this.apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured in .env');
+    }
+
+    const cleanModel = this.model.replace(/^models\//, '');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
+    console.log(`[Gemini LLM] Streaming from Google Gemini API (model: ${cleanModel})...`);
+
+    const body: Record<string, any> = {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    };
+
+    if (systemPrompt) {
+      body.system_instruction = { parts: [{ text: systemPrompt }] };
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Google Gemini API streaming error (${res.status}): ${errText}`);
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('Missing response body from Gemini API');
+
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data:')) continue;
+          const jsonStr = trimmed.replace(/^data:\s*/, '');
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const textPart = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (textPart) {
+              yield textPart;
+            }
+          } catch {
+            // Ignore incomplete fragments
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+}
+
 export function getLlmProvider(overrideProvider?: string): LlmProvider {
   const provider = overrideProvider || env.LLM_PROVIDER || 'mock';
 
@@ -164,6 +266,11 @@ export function getLlmProvider(overrideProvider?: string): LlmProvider {
         apiKey: env.OPENAI_API_KEY,
         model: env.LLM_MODEL || 'gpt-4o-mini',
       });
+    case 'gemini':
+      return new GeminiLlmProvider(
+        env.GEMINI_API_KEY,
+        env.LLM_MODEL === 'llama3.2:1b' ? 'gemini-1.5-flash' : env.LLM_MODEL
+      );
     default:
       throw new Error(`Unsupported LLM provider: ${provider}`);
   }

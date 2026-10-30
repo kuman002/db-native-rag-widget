@@ -1,4 +1,6 @@
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
 import { checkSystemHealth } from '../database/health.js';
 import { RagRetrievalEngine } from '../query/retrieval.js';
 import { VectorRepository } from '../vector/repository.js';
@@ -64,9 +66,13 @@ export function createServer(options: ServerOptions = {}): http.Server {
             'default_tenant';
 
           const message = parsed.message || parsed.query;
-          const conversationId = parsed.conversationId;
+          const conversationId = parsed.conversationId || `conv_${Date.now()}`;
+
+          console.log(`[HTTP Server] --> POST /api/v1/chat/message from tenant="${tenantKey}"`);
+          console.log(`[HTTP Server]     Query: "${message}"`);
 
           if (!message || typeof message !== 'string') {
+            console.warn(`[HTTP Server] <-- 400 Bad Request: missing "message" parameter`);
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Field "message" is required' }));
             return;
@@ -87,8 +93,10 @@ export function createServer(options: ServerOptions = {}): http.Server {
             res.write(`data: ${JSON.stringify(event)}\n\n`);
           }
 
+          console.log(`[HTTP Server] <-- 200 OK (SSE stream completed for conversation: ${conversationId})`);
           res.end();
         } catch (err: any) {
+          console.error(`[HTTP Server] <-- Error handling /api/v1/chat/message:`, err);
           if (!res.headersSent) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: err?.message || 'Invalid JSON request body' }));
@@ -99,6 +107,41 @@ export function createServer(options: ServerOptions = {}): http.Server {
         }
       });
       return;
+    }
+
+    // GET /widget.js
+    if (req.method === 'GET' && url.pathname === '/widget.js') {
+      try {
+        const filePath = path.join(process.cwd(), 'public', 'widget.js');
+        if (fs.existsSync(filePath)) {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          res.writeHead(200, {
+            'Content-Type': 'application/javascript; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600',
+          });
+          res.end(content);
+          return;
+        }
+      } catch (e) {
+        // Fallback to 404 below
+      }
+    }
+
+    // GET / or /demo
+    if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/demo')) {
+      try {
+        const filePath = path.join(process.cwd(), 'public', 'demo.html');
+        if (fs.existsSync(filePath)) {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+          });
+          res.end(content);
+          return;
+        }
+      } catch (e) {
+        // Fallback to 404 below
+      }
     }
 
     // 404 for any other route
