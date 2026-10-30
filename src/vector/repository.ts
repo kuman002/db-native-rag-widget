@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { db } from '../database/pool.js';
+import { db, query } from '../database/pool.js';
 import { documentVectors, type DocumentVector } from '../database/schema.js';
 
 export interface UpsertVectorParams {
@@ -10,6 +10,15 @@ export interface UpsertVectorParams {
   contentHash: string;
   embedding: number[];
   metadata?: Record<string, any>;
+}
+
+export interface SimilarVectorResult {
+  id: string;
+  sourceTable: string;
+  sourceId: string;
+  content: string;
+  metadata: Record<string, any>;
+  similarity: number;
 }
 
 export class VectorRepository {
@@ -95,6 +104,49 @@ export class VectorRepository {
       );
 
     return record ?? null;
+  }
+
+  /**
+   * Performs cosine similarity search scoped to tenantId.
+   */
+  async findSimilar(
+    tenantId: string,
+    queryEmbedding: number[],
+    topK: number = 5,
+    minSimilarity: number = 0.70
+  ): Promise<SimilarVectorResult[]> {
+    const vectorString = `[${queryEmbedding.join(',')}]`;
+    const res = await query<{
+      id: string;
+      source_table: string;
+      source_id: string;
+      content: string;
+      metadata: Record<string, any>;
+      similarity: string | number;
+    }>(
+      `SELECT 
+         id,
+         source_table,
+         source_id,
+         content,
+         metadata,
+         1 - (embedding <=> $1::vector) AS similarity
+       FROM document_vectors
+       WHERE tenant_id = $2
+         AND 1 - (embedding <=> $1::vector) >= $3
+       ORDER BY embedding <=> $1::vector ASC
+       LIMIT $4;`,
+      [vectorString, tenantId, minSimilarity, topK]
+    );
+
+    return res.rows.map((row) => ({
+      id: row.id,
+      sourceTable: row.source_table,
+      sourceId: row.source_id,
+      content: row.content,
+      metadata: row.metadata,
+      similarity: typeof row.similarity === 'string' ? parseFloat(row.similarity) : Number(row.similarity),
+    }));
   }
 }
 
