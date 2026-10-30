@@ -54,3 +54,4 @@ describe('CDC Notification Listener Service (Task 3)', () => {
     expect(listener.isRunning()).toBe(false);
   });
 });
+

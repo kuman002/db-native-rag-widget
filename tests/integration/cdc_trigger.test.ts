@@ -93,3 +93,4 @@ describe('Postgres CDC Mutation Triggers (Task 2)', () => {
     });
   });
 });
+

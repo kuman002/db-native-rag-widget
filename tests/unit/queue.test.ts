@@ -39,3 +39,4 @@ describe('Ingestion Queue Client (BullMQ)', () => {
     await expect(enqueueChangeEvent(invalidEvent)).rejects.toThrow();
   });
 });
+

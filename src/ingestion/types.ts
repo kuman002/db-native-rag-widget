@@ -10,3 +10,4 @@ export const cdcChangeEventSchema = z.object({
 });
 
 export type CdcChangeEvent = z.infer<typeof cdcChangeEventSchema>;
+
