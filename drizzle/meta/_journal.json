@@ -15,6 +15,13 @@
       "when": 1792587318823,
       "tag": "0001_initial_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793349973246,
+      "tag": "0002_add_cdc_trigger",
+      "breakpoints": true
     }
   ]
 }
