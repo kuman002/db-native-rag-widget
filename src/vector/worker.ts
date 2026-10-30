@@ -162,3 +162,4 @@ export class VectorWorkerService {
     return result;
   }
 }
+

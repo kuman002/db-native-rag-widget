@@ -147,3 +147,4 @@ describe('End-to-End Vectorization Pipeline (Task 5)', () => {
     expect(deletedRecord).toBeNull();
   });
 });
+

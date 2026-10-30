@@ -122,3 +122,4 @@ export function getEmbeddingProvider(type?: string): EmbeddingProvider {
       throw new Error(`Unsupported embedding provider: '${selectedType}'. Supported: 'mock', 'openai', 'ollama'.`);
   }
 }
+
