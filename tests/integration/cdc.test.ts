@@ -61,11 +61,7 @@ describe('CDC Pipeline Integration (Triggers -> pg_notify -> Listener -> BullMQ 
     expect(insertEvent?.tenantId).toBe('tenant_cdc_test');
 
     // 4. Verify job in BullMQ queue
-    const expectedJobId = createDebounceJobId({
-      tenantId: 'tenant_cdc_test',
-      table: 'products',
-      recordId: String(inserted.id),
-    });
+    const expectedJobId = `tenant_cdc_test:products:${inserted.id}`;
 
     const job = await cdcQueue.getJob(expectedJobId);
     expect(job).not.toBeNull();
@@ -112,11 +108,7 @@ describe('CDC Pipeline Integration (Triggers -> pg_notify -> Listener -> BullMQ 
     expect(updateEvent?.operation).toBe('UPDATE');
 
     // 4. Verify updated BullMQ job
-    const jobId = createDebounceJobId({
-      tenantId: 'tenant_cdc_test',
-      table: 'products',
-      recordId: String(item.id),
-    });
+    const jobId = `tenant_cdc_test:products:${item.id}`;
 
     const job = await cdcQueue.getJob(jobId);
     expect(job).not.toBeNull();
@@ -170,11 +162,7 @@ describe('CDC Pipeline Integration (Triggers -> pg_notify -> Listener -> BullMQ 
       })
       .returning();
 
-    const jobId = createDebounceJobId({
-      tenantId: 'tenant_debounce',
-      table: 'products',
-      recordId: String(rapidItem.id),
-    });
+    const jobId = `tenant_debounce:products:${rapidItem.id}`;
 
     // Wait for initial insert notification to settle
     await new Promise((resolve) => setTimeout(resolve, 200));
@@ -191,8 +179,8 @@ describe('CDC Pipeline Integration (Triggers -> pg_notify -> Listener -> BullMQ 
     await new Promise((resolve) => setTimeout(resolve, 400));
 
     // Verify there is only 1 job for this record ID in the BullMQ queue
-    const delayedJobs = await cdcQueue.getJobs(['delayed', 'waiting']);
-    const jobsForRecord = delayedJobs.filter((j) => j.id === jobId);
+    const allJobs = await cdcQueue.getJobs(['delayed', 'waiting', 'active', 'completed']);
+    const jobsForRecord = allJobs.filter((j) => j.id === jobId);
 
     expect(jobsForRecord.length).toBe(1);
     expect(jobsForRecord[0].data.operation).toBe('UPDATE');

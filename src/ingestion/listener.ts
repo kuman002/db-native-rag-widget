@@ -9,6 +9,14 @@ export class CdcListenerService {
   private client: pg.Client | null = null;
   private running = false;
   private notificationHandler: ((msg: pg.Notification) => void) | null = null;
+  private eventSubscribers: Array<(event: CdcChangeEvent) => void> = [];
+
+  onEvent(callback: (event: CdcChangeEvent) => void): () => void {
+    this.eventSubscribers.push(callback);
+    return () => {
+      this.eventSubscribers = this.eventSubscribers.filter((cb) => cb !== callback);
+    };
+  }
 
   async start(): Promise<void> {
     if (this.running) return;
@@ -35,6 +43,14 @@ export class CdcListenerService {
         const parsed = JSON.parse(msg.payload);
         const event = cdcChangeEventSchema.parse(parsed);
         await enqueueChangeEvent(event);
+
+        for (const sub of this.eventSubscribers) {
+          try {
+            sub(event);
+          } catch (e) {
+            console.error('[CDC Listener] Subscriber callback failed:', e);
+          }
+        }
       } catch (err) {
         console.error('[CDC Listener] Failed to parse or enqueue notification:', err, msg.payload);
       }

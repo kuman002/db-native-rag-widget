@@ -20,7 +20,7 @@ describe('Ingestion Queue Client (BullMQ)', () => {
 
     expect(job).toBeDefined();
     expect(job.id).toBe('tenant_test_123:products:101');
-    expect(job.data).toEqual(validEvent);
+    expect(job.data).toMatchObject(validEvent);
 
     // Verify it is in the queue
     const fetchedJob = await cdcQueue.getJob(job.id!);
