@@ -60,7 +60,17 @@ describe('Database Schema & Drizzle Migration Integration', () => {
     // Clean up test record
     await pool.query(`DELETE FROM products WHERE id = $1;`, [newProduct.id]);
 
-    // 7. Test migration idempotency: running again should not fail
+    // 7. Verify CDC trigger function and trigger exist for all 3 mutations
+    const triggerRes = await pool.query<{ trigger_name: string; event_manipulation: string }>(
+      `SELECT trigger_name, event_manipulation FROM information_schema.triggers
+       WHERE event_object_table = 'products' AND trigger_name = 'trg_products_rag_cdc'
+       ORDER BY event_manipulation ASC;`
+    );
+    expect(triggerRes.rows.length).toBe(3);
+    expect(triggerRes.rows[0].trigger_name).toBe('trg_products_rag_cdc');
+    expect(triggerRes.rows.map((r) => r.event_manipulation)).toEqual(['DELETE', 'INSERT', 'UPDATE']);
+
+    // 8. Test migration idempotency: running again should not fail
     await expect(runMigrations()).resolves.not.toThrow();
   });
 });
