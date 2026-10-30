@@ -74,8 +74,8 @@ export class OpenAiEmbeddingProvider implements EmbeddingProvider {
 export class OllamaEmbeddingProvider implements EmbeddingProvider {
   constructor(
     private readonly baseUrl: string = process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    private readonly model: string = 'nomic-embed-text',
-    private readonly dimensions: number = 768
+    private readonly model: string = process.env.OLLAMA_MODEL || 'nomic-embed-text',
+    private readonly dimensions: number = env.VECTOR_DIMENSION || 1536
   ) {}
 
   async generateEmbedding(text: string): Promise<number[]> {
@@ -93,7 +93,18 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
     }
 
     const data = (await response.json()) as { embedding: number[] };
-    return data.embedding;
+    const emb = data.embedding;
+
+    // Pad with zeros if model outputs smaller dimensions (e.g. 768) and DB requires 1536
+    if (emb.length < this.dimensions) {
+      const padded = new Array(this.dimensions).fill(0);
+      for (let i = 0; i < emb.length; i++) {
+        padded[i] = emb[i];
+      }
+      return padded;
+    }
+
+    return emb;
   }
 
   getDimensions(): number {

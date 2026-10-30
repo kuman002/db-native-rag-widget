@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   MockEmbeddingProvider,
+  OllamaEmbeddingProvider,
   getEmbeddingProvider,
   type EmbeddingProvider,
 } from '../../src/vector/provider.js';
@@ -46,6 +47,15 @@ describe('Pluggable Embedding Provider Abstraction (Task 1)', () => {
     expect(() => getEmbeddingProvider('unsupported_provider')).toThrow(
       /Unsupported embedding provider/
     );
+  });
+
+  it('OllamaEmbeddingProvider generates embeddings from running Ollama service', async () => {
+    const provider = new OllamaEmbeddingProvider('http://localhost:11434', 'nomic-embed-text', 1536);
+    expect(provider.getDimensions()).toBe(1536);
+
+    const vector = await provider.generateEmbedding('Self-hosted privacy-first embeddings');
+    expect(vector).toHaveLength(1536);
+    expect(vector.some((v) => v !== 0)).toBe(true);
   });
 });
 
